@@ -13,6 +13,8 @@ exports.postAddProduct = (req, res, next) => {
   const imageUrl = req.body.imageUrl;
   const price = req.body.price;
   const description = req.body.description;
+  console.log(req.user);
+
 
   // Create a new Product instance using Mongoose
   const product = new Product({
@@ -20,7 +22,7 @@ exports.postAddProduct = (req, res, next) => {
     price: price,
     imageUrl: imageUrl,
     description: description,
-    //userId: req.user._id,
+    userId: req.user,
   });
 
   // Save the product to the database
@@ -90,7 +92,9 @@ exports.postEditProduct = (req, res, next) => {
 exports.getProducts = (req, res, next) => {
   
   Product.find()
+    .populate('userId')
     .then(products => {
+      console.log(products);
       res.render('admin/products', {
         prods: products,
         pageTitle: 'Admin Products',

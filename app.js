@@ -8,7 +8,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 
 const errorController = require('./controllers/error');
-
+const User = require('./models/user');
 
 const app = express();
 
@@ -22,14 +22,16 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use((req, res, next) => {
-  // User.findById(1)
-  //   .then(user => {
-  //     req.user = user;
-  //     next();
-  //   })
-  //   .catch(err => console.log(err));
-  next();
-});
+  User.findById('66c63e6560389cc9c8fce4a4')
+    .then(user => {
+      console.log(user);
+      req.user = user;
+      next();
+    })
+    .catch(err =>{ console.log(err);
+ 
+    });
+  })
 
  app.use('/admin', adminRoutes);
 app.use(shopRoutes);
@@ -46,6 +48,19 @@ mongoose.connect('mongodb+srv://krishnakarn911:zotz4gPpsVT4CrpY@ecommerce.7lpyf.
     useNewUrlParser: true,
     useUnifiedTopology: true
 }).then(con=>{
+  User.findOne().then(user=>{
+    if(!user){
+    const user = new User({
+    name: "Manju",
+    email: "manju@gmail.com",
+    cart:{
+      items: []
+    }
+  });
+  user.save();
+    }
+  })
+  
     console.log('DB Connection successful');
 })
 

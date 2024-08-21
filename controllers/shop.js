@@ -51,57 +51,63 @@ exports.getIndex = (req, res, next) => {
     });
 };
 
-exports.getCart = (req, res, next) => {
-  req.user
-    .getCart()
-    .then(cart => {
-      return cart
-        .getProducts()
-        .then(products => {
-          res.render('shop/cart', {
-            path: '/cart',
-            pageTitle: 'Your Cart',
-            products: products
-          });
-        })
-        .catch(err => console.log(err));
-    })
-    .catch(err => console.log(err));
-};
+// exports.getCart = (req, res, next) => {
+//   req.user
+//     .getCart()
+//     .then(cart => {
+//       return cart
+//         .getProducts()
+//         .then(products => {
+//           res.render('shop/cart', {
+//             path: '/cart',
+//             pageTitle: 'Your Cart',
+//             products: products
+//           });
+//         })
+//         .catch(err => console.log(err));
+//     })
+//     .catch(err => console.log(err));
+// };
 
 exports.postCart = (req, res, next) => {
   const prodId = req.body.productId;
-  let fetchedCart;
+  const cart = req.user.cart ? req.user.cart : { items: [] };
+  
+  // Find the index of the product in the cart if it exists
+  const cartProductIndex = cart.items.findIndex(cp => {
+    return cp.productId.toString() === prodId.toString();
+  });
+  
   let newQuantity = 1;
-  req.user
-    .getCart()
-    .then(cart => {
-      fetchedCart = cart;
-      return cart.getProducts({ where: { id: prodId } });
-    })
-    .then(products => {
-      let product;
-      if (products.length > 0) {
-        product = products[0];
-      }
+  const updatedCartItems = [...cart.items];
 
-      if (product) {
-        const oldQuantity = product.cartItem.quantity;
-        newQuantity = oldQuantity + 1;
-        return product;
-      }
-      return Product.findById(prodId);
-    })
-    .then(product => {
-      return fetchedCart.addProduct(product, {
-        through: { quantity: newQuantity }
-      });
-    })
+  if (cartProductIndex >= 0) {
+    // If product is already in the cart, increase the quantity
+    newQuantity = cart.items[cartProductIndex].quantity + 1;
+    updatedCartItems[cartProductIndex].quantity = newQuantity;
+  } else {
+    // If product is not in the cart, add it with quantity 1
+    updatedCartItems.push({
+      productId: prodId,
+      quantity: newQuantity
+    });
+  }
+
+  const updatedCart = {
+    items: updatedCartItems
+  };
+
+  req.user.cart = updatedCart;
+  
+  // Save the updated user with the new cart
+  req.user
+    .save()
     .then(() => {
       res.redirect('/cart');
     })
     .catch(err => console.log(err));
 };
+
 
 exports.postCartDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
